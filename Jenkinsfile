@@ -2,33 +2,14 @@ pipeline {
     agent any
 
     environment {
-        // Define your Artifactory credentials ID
         ARTIFACTORY_CREDENTIALS_ID = 'artifactory-cred'
         ARTIFACTORY_URL = "http://ec2-35-81-82-98.us-west-2.compute.amazonaws.com:8081/artifactory"
         ARTIFACTORY_REPO = "demo"
+        TARGET_REPO = "demo2"
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                // Checkout the source code from your version control system
-                checkout scm
-            }
-        }
-
-        stage('Build') {
-            steps {
-                // Build your Maven project
-                sh 'mvn clean install'
-            }
-        }
-
-        stage('Test') {
-            steps {
-                // Run tests
-                sh 'mvn test'
-            }
-        }
+        // Previous stages as per your pipeline
 
         stage('Deploy to Artifactory') {
             steps {
@@ -36,14 +17,49 @@ pipeline {
                     def server = Artifactory.server ARTIFACTORY_URL, ARTIFACTORY_CREDENTIALS_ID
                     def rtMaven = Artifactory.newMavenBuild()
                     
-                    rtMaven.tool = 'Maven'
-                    rtMaven.deployer repo: ARTIFACTORY_REPO, server: server
-                    rtMaven.deployer.deployArtifacts = false // Set to true if you want to deploy artifacts
-                    
+                    // Maven build steps as per your pipeline
+
                     // Deploy the artifacts to Artifactory
                     rtMaven.deployer.deployArtifacts buildInfo
+
+                    // Add a post-build step to copy artifacts to another repository if the build is successful
+                    if (currentBuild.resultIsBetterOrEqualTo('SUCCESS')) {
+                        copyArtifactsToTargetRepo(server)
+                    }
                 }
             }
         }
     }
+
+    post {
+        success {
+            // This block will be executed only if the build is successful
+            echo 'Build successful!'
+            copyArtifactsToTargetRepo(Artifactory.server ARTIFACTORY_URL, ARTIFACTORY_CREDENTIALS_ID)
+        }
+    }
+}
+
+def copyArtifactsToTargetRepo(server) {
+    echo 'Copying artifacts to target repository...'
+    def sourceRepoPath = "your-artifactory-repo/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/"
+    def targetRepoPath = "${TARGET_REPO}/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/"
+
+    // Artifactory REST API to copy artifacts
+    def copyRequest = """
+        {
+            "dry": false,
+            "repositories": [
+                {
+                    "srcRepoPath": "${sourceRepoPath}",
+                    "dstRepoPath": "${targetRepoPath}"
+                }
+            ]
+        }
+    """
+
+    def copyResponse = server.artifactoryService.artifactoryManager
+        .post("/api/copy/${ARTIFACTORY_REPO}", copyRequest)
+
+    echo "Copy response: ${copyResponse}"
 }
