@@ -43,9 +43,12 @@ pipeline {
 def copyArtifactsToTargetRepo() {
     echo '=== Copying artifacts to target repository ==='
     
-    def sourceRepoPath = "demo/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/"
-    def targetRepoPath = "${TARGET_REPO}/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/"
-
-    // Use the 'sh' step to execute the curl command
-    sh """curl -u ${ARTIFACTORY_CREDENTIALS_ID} -X POST "${ARTIFACTORY_URL}/api/copy/${ARTIFACTORY_REPO}/${sourceRepoPath}?to=${targetRepoPath}" """
+    // Use Artifactory plugin to copy artifacts
+    rtMaven.deployer.deployerArtifactory {
+        artifactoryCredentialsId = ARTIFACTORY_CREDENTIALS_ID
+        repository = TARGET_REPO
+        includesPattern = "**/*"
+        excludesPattern = ""
+        copyPattern = "com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/*"
+    }
 }
