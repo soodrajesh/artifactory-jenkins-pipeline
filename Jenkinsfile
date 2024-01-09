@@ -9,24 +9,19 @@ pipeline {
     }
 
     stages {
-        // Previous stages as per your pipeline
-
-        stage('Deploy to Artifactory') {
+        stage('Build and Deploy to Artifactory') {
             steps {
                 script {
-                    echo '=== Deploying to Artifactory ==='
-                    
                     def server = Artifactory.server ARTIFACTORY_URL, ARTIFACTORY_CREDENTIALS_ID
                     def rtMaven = Artifactory.newMavenBuild()
                     
                     // Maven build steps as per your pipeline
 
-                    echo '=== Deploying artifacts to Artifactory ==='
+                    // Deploy the artifacts to Artifactory
                     rtMaven.deployer.deployArtifacts buildInfo
 
                     // Add a post-build step to copy artifacts to another repository if the build is successful
                     if (currentBuild.resultIsBetterOrEqualTo('SUCCESS')) {
-                        echo '=== Build successful - Copying artifacts to target repository ==='
                         copyArtifactsToTargetRepo(server)
                     }
                 }
@@ -36,9 +31,7 @@ pipeline {
 
     post {
         success {
-            echo '=== Post-build actions ==='
             echo 'Build successful!'
-            copyArtifactsToTargetRepo(Artifactory.server ARTIFACTORY_URL, ARTIFACTORY_CREDENTIALS_ID)
         }
     }
 }
@@ -58,12 +51,16 @@ def copyArtifactsToTargetRepo(server) {
                     "srcRepoPath": "${sourceRepoPath}",
                     "dstRepoPath": "${targetRepoPath}"
                 }
-            ]
+            ],
+            "copy": true,
+            "failFast": false
         }
     """
 
+    echo "Copy request: ${copyRequest}"
+
     def copyResponse = server.artifactoryService.artifactoryManager
-        .post("/api/copy/move/${ARTIFACTORY_REPO}", copyRequest)
+        .post("/api/copy/${ARTIFACTORY_REPO}", copyRequest)
 
     echo "Copy response: ${copyResponse}"
 }
