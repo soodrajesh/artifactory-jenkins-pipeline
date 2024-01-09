@@ -22,9 +22,9 @@ pipeline {
                     // Deploy the artifacts to Artifactory
                     def buildInfo = rtMaven.deployer.deployArtifacts()
 
-                    // Add a post-build step to copy artifacts to another repository if the build is successful
+                    // Add a post-build step to copy the .war file to another repository if the build is successful
                     if (currentBuild.resultIsBetterOrEqualTo('SUCCESS')) {
-                        copyArtifactsToTargetRepo(server, buildInfo)
+                        step([$class: 'CopyArtifact', projectName: 'YourOtherJobName', filter: 'MyPhoenixApp/target/*.war', target: 'demo2/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/'])
                     }
                 }
             }
@@ -37,29 +37,4 @@ pipeline {
             echo 'Build successful!'
         }
     }
-}
-
-def copyArtifactsToTargetRepo(server, buildInfo) {
-    echo '=== Copying artifacts to target repository ==='
-
-    // Artifactory REST API to copy artifacts
-    def sourceRepoPath = "com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/"
-    def targetRepoPath = "${TARGET_REPO}/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/"
-
-    def copyRequest = """
-        {
-            "dry": false,
-            "repositories": [
-                {
-                    "srcRepoPath": "${sourceRepoPath}",
-                    "dstRepoPath": "${targetRepoPath}"
-                }
-            ]
-        }
-    """
-
-    def copyResponse = server.artifactoryService.artifactoryManager
-        .post("/api/copy/${ARTIFACTORY_REPO}", copyRequest)
-
-    echo "Copy response: ${copyResponse}"
 }
