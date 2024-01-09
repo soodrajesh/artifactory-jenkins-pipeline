@@ -22,9 +22,14 @@ pipeline {
         stage('Copy Artifact') {
             steps {
                 script {
-                    def sourcePath = "${ARTIFACTORY_REPO}/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/MyPhoenixApp-1.0-SNAPSHOT.war"
-                    def targetPath = "${TARGET_REPO}/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/MyPhoenixApp-1.0-SNAPSHOT.war"
-                    copyArtifacts filter: '*.war', fingerprintArtifacts: true, projectName: sourcePath, target: targetPath
+                    def latestSuccessfulBuild = findLastSuccessfulBuild(project: 'artifactory-jenkins-project')
+                    copyArtifacts(
+                        filter: '*.war',
+                        fingerprintArtifacts: true,
+                        projectName: 'artifactory-jenkins-project',
+                        selector: specific(latestSuccessfulBuild.number),
+                        target: "${TARGET_REPO}/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/"
+                    )
                 }
             }
         }
