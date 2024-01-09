@@ -2,30 +2,39 @@ pipeline {
     agent any
 
     environment {
-        ARTIFACTORY_CREDENTIALS_ID = 'artifactory-cred'
-        ARTIFACTORY_URL = 'http://ec2-35-81-82-98.us-west-2.compute.amazonaws.com:8081/artifactory'
         ARTIFACTORY_REPO = 'demo'
         TARGET_REPO = 'demo2'
+        ARTIFACTORY_CREDENTIALS_ID = 'artifactory-cred'
+        ARTIFACTORY_URL = 'http://ec2-35-81-82-98.us-west-2.compute.amazonaws.com:8081/artifactory'
     }
 
     stages {
-        // Previous stages as per your pipeline
+        stage('Checkout') {
+            steps {
+                // Your repository checkout steps here
+                checkout([$class: 'GitSCM', branches: [[name: '*/main']], userRemoteConfigs: [[url: 'https://github.com/soodrajesh/artifactory-jenkins-pipeline.git']]])
+            }
+        }
 
-        stage('Deploy to Artifactory') {
+        stage('Build and Deploy') {
             steps {
                 script {
-                    def server = Artifactory.server ARTIFACTORY_URL, ARTIFACTORY_CREDENTIALS_ID
-                    def rtMaven = Artifactory.newMavenBuild()
+                    // Build your project (replace this with your build steps)
+                    def mavenHome = tool 'Maven3'
+                    sh "${mavenHome}/bin/mvn -f MyPhoenixApp/pom.xml clean install -e"
 
-                    // Maven build steps as per your pipeline
+                    // Copy the latest .war file from the source repository to demo2
+                    copyArtifacts(
+                        projectName: 'artifactory-jenkins-project',
+                        filter: '*.war',
+                        target: '/var/lib/jenkins/.m2/repository/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/'
+                    )
 
-                    // Deploy the artifacts to Artifactory
-                    def buildInfo = rtMaven.deployer.deployArtifacts()
+                    // Rename the copied file to match the target repository path
+                    sh "mv /var/lib/jenkins/.m2/repository/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/*.war /var/lib/jenkins/.m2/repository/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/MyPhoenixApp-1.0-SNAPSHOT.war"
 
-                    // Add a post-build step to copy the .war file to another repository if the build is successful
-                    if (currentBuild.resultIsBetterOrEqualTo('SUCCESS')) {
-                        step([$class: 'CopyArtifact', projectName: 'YourOtherJobName', filter: 'MyPhoenixApp/target/*.war', target: 'demo2/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/'])
-                    }
+                    // Upload the .war file to the target repository
+                    sh "curl -u ${ARTIFACTORY_CREDENTIALS_ID} -XPUT \"${ARTIFACTORY_URL}/${TARGET_REPO}/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/MyPhoenixApp-1.0-SNAPSHOT.war\" --data-binary @/var/lib/jenkins/.m2/repository/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/MyPhoenixApp-1.0-SNAPSHOT.war"
                 }
             }
         }
