@@ -16,13 +16,19 @@ pipeline {
             }
         }
 
-        stage('Build and Deploy') {
+        stage('Build') {
             steps {
                 script {
                     // Build your project (replace this with your build steps)
                     def mavenHome = tool 'Maven3'
                     sh "${mavenHome}/bin/mvn -f MyPhoenixApp/pom.xml clean install -e"
+                }
+            }
+        }
 
+        stage('Copy Artifact') {
+            steps {
+                script {
                     // Copy the latest .war file from the source repository to demo2
                     copyArtifacts(
                         projectName: 'artifactory-jenkins-project',
