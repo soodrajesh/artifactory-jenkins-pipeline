@@ -31,12 +31,16 @@ pipeline {
         stage('Copy Artifact') {
             steps {
                 script {
-                    // Unstash and copy the artifacts to the target repository
-                    unstash 'myArtifacts'
-                    sh "cp MyPhoenixApp/target/*.war /var/lib/jenkins/jobs/${TARGET_REPO}/workspace/"
+                    // Copy artifacts from the source project to the target project
+                    copyArtifacts(
+                        filter: '*.war',
+                        projectName: 'artifactory-jenkins-project2', // Replace with your source project name
+                        selector: lastSuccessful()
+                    )
                 }
             }
         }
+
 
         // Add more stages as needed
     }
