@@ -1,4 +1,4 @@
-pipeline pipeline {
+pipeline {
     agent any
 
     environment {
@@ -22,10 +22,8 @@ pipeline pipeline {
         stage('Copy Artifact') {
             steps {
                 script {
-                    def buildInfo = rtMaven.run pom: 'path/to/your/pom.xml', goals: 'clean install'
-                    def warFileName = buildInfo.artifacts.find { it.type == 'war' }.name
-                    def sourcePath = "${ARTIFACTORY_REPO}/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/${warFileName}"
-                    def targetPath = "${TARGET_REPO}/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/${warFileName}"
+                    def sourcePath = "${ARTIFACTORY_REPO}/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/MyPhoenixApp-1.0-SNAPSHOT.war"
+                    def targetPath = "${TARGET_REPO}/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/MyPhoenixApp-1.0-SNAPSHOT.war"
                     copyArtifacts filter: '*.war', fingerprintArtifacts: true, projectName: sourcePath, target: targetPath
                 }
             }
