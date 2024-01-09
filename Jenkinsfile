@@ -9,7 +9,9 @@ pipeline {
     }
 
     stages {
-        stage('Build and Deploy to Artifactory') {
+        // Previous stages as per your pipeline
+
+        stage('Deploy to Artifactory') {
             steps {
                 script {
                     def server = Artifactory.server ARTIFACTORY_URL, ARTIFACTORY_CREDENTIALS_ID
@@ -22,7 +24,7 @@ pipeline {
 
                     // Add a post-build step to copy artifacts to another repository if the build is successful
                     if (currentBuild.resultIsBetterOrEqualTo('SUCCESS')) {
-                        copyArtifactsToTargetRepo(server)
+                        copyArtifactsToTargetRepo()
                     }
                 }
             }
@@ -31,36 +33,19 @@ pipeline {
 
     post {
         success {
+            // This block will be executed only if the build is successful
             echo 'Build successful!'
+            copyArtifactsToTargetRepo()
         }
     }
 }
 
-def copyArtifactsToTargetRepo(server) {
+def copyArtifactsToTargetRepo() {
     echo '=== Copying artifacts to target repository ==='
     
     def sourceRepoPath = "demo/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/"
     def targetRepoPath = "${TARGET_REPO}/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/"
 
-    // Artifactory REST API to copy artifacts
-    def copyRequest = """
-        {
-            "dry": false,
-            "repositories": [
-                {
-                    "srcRepoPath": "${sourceRepoPath}",
-                    "dstRepoPath": "${targetRepoPath}"
-                }
-            ],
-            "copy": true,
-            "failFast": false
-        }
-    """
-
-    echo "Copy request: ${copyRequest}"
-
-    def copyResponse = server.artifactoryService.artifactoryManager
-        .post("/api/copy/${ARTIFACTORY_REPO}", copyRequest)
-
-    echo "Copy response: ${copyResponse}"
+    // Use the 'sh' step to execute the curl command
+    sh """curl -u ${ARTIFACTORY_CREDENTIALS_ID} -X POST "${ARTIFACTORY_URL}/api/copy/${ARTIFACTORY_REPO}/${sourceRepoPath}?to=${targetRepoPath}" """
 }
