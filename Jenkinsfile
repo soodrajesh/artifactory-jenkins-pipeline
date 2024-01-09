@@ -22,14 +22,8 @@ pipeline {
         stage('Copy Artifact') {
             steps {
                 script {
-                    def latestSuccessfulBuild = findLastSuccessfulBuild(project: 'artifactory-jenkins-project')
-                    copyArtifacts(
-                        filter: '*.war',
-                        fingerprintArtifacts: true,
-                        projectName: 'artifactory-jenkins-project',
-                        selector: specific(latestSuccessfulBuild.number),
-                        target: "${TARGET_REPO}/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/"
-                    )
+                    // Copy all artifacts to the target repository
+                    sh "curl -u ${ARTIFACTORY_CREDENTIALS_ID} -X POST '${ARTIFACTORY_URL}/api/copy/${ARTIFACTORY_REPO}/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/*?to=/${TARGET_REPO}/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/'"
                 }
             }
         }
