@@ -14,16 +14,19 @@ pipeline {
         stage('Deploy to Artifactory') {
             steps {
                 script {
+                    echo '=== Deploying to Artifactory ==='
+                    
                     def server = Artifactory.server ARTIFACTORY_URL, ARTIFACTORY_CREDENTIALS_ID
                     def rtMaven = Artifactory.newMavenBuild()
                     
                     // Maven build steps as per your pipeline
 
-                    // Deploy the artifacts to Artifactory
+                    echo '=== Deploying artifacts to Artifactory ==='
                     rtMaven.deployer.deployArtifacts buildInfo
 
                     // Add a post-build step to copy artifacts to another repository if the build is successful
                     if (currentBuild.resultIsBetterOrEqualTo('SUCCESS')) {
+                        echo '=== Build successful - Copying artifacts to target repository ==='
                         copyArtifactsToTargetRepo(server)
                     }
                 }
@@ -33,7 +36,7 @@ pipeline {
 
     post {
         success {
-            // This block will be executed only if the build is successful
+            echo '=== Post-build actions ==='
             echo 'Build successful!'
             copyArtifactsToTargetRepo(Artifactory.server ARTIFACTORY_URL, ARTIFACTORY_CREDENTIALS_ID)
         }
@@ -41,8 +44,9 @@ pipeline {
 }
 
 def copyArtifactsToTargetRepo(server) {
-    echo 'Copying artifacts to target repository...'
-    def sourceRepoPath = "your-artifactory-repo/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/"
+    echo '=== Copying artifacts to target repository ==='
+    
+    def sourceRepoPath = "demo/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/"
     def targetRepoPath = "${TARGET_REPO}/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/"
 
     // Artifactory REST API to copy artifacts
@@ -59,7 +63,7 @@ def copyArtifactsToTargetRepo(server) {
     """
 
     def copyResponse = server.artifactoryService.artifactoryManager
-        .post("/api/copy/${ARTIFACTORY_REPO}", copyRequest)
+        .post("/api/copy/move/${ARTIFACTORY_REPO}", copyRequest)
 
     echo "Copy response: ${copyResponse}"
 }
