@@ -1,4 +1,4 @@
-pipeline {
+pipeline pipeline {
     agent any
 
     environment {
@@ -9,19 +9,12 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                // Your repository checkout steps here
-                checkout([$class: 'GitSCM', branches: [[name: '*/main']], userRemoteConfigs: [[url: 'https://github.com/soodrajesh/artifactory-jenkins-pipeline.git']]])
-            }
-        }
-
         stage('Build') {
             steps {
                 script {
-                    // Build your project (replace this with your build steps)
-                    def mavenHome = tool 'Maven3'
-                    sh "${mavenHome}/bin/mvn -f MyPhoenixApp/pom.xml clean install -e"
+                    // Your build steps go here
+                    // For example:
+                    sh 'mvn clean install'
                 }
             }
         }
@@ -29,27 +22,13 @@ pipeline {
         stage('Copy Artifact') {
             steps {
                 script {
-                    // Copy the latest .war file from the source repository to demo2
-                    copyArtifacts(
-                        projectName: 'artifactory-jenkins-project',
-                        filter: '*.war',
-                        target: '/var/lib/jenkins/.m2/repository/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/'
-                    )
-
-                    // Rename the copied file to match the target repository path
-                    sh "mv /var/lib/jenkins/.m2/repository/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/*.war /var/lib/jenkins/.m2/repository/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/MyPhoenixApp-1.0-SNAPSHOT.war"
-
-                    // Upload the .war file to the target repository
-                    sh "curl -u ${ARTIFACTORY_CREDENTIALS_ID} -XPUT \"${ARTIFACTORY_URL}/${TARGET_REPO}/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/MyPhoenixApp-1.0-SNAPSHOT.war\" --data-binary @/var/lib/jenkins/.m2/repository/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/MyPhoenixApp-1.0-SNAPSHOT.war"
+                    def buildInfo = rtMaven.run pom: 'path/to/your/pom.xml', goals: 'clean install'
+                    def warFileName = buildInfo.artifacts.find { it.type == 'war' }.name
+                    def sourcePath = "${ARTIFACTORY_REPO}/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/${warFileName}"
+                    def targetPath = "${TARGET_REPO}/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/${warFileName}"
+                    copyArtifacts filter: '*.war', fingerprintArtifacts: true, projectName: sourcePath, target: targetPath
                 }
             }
-        }
-    }
-
-    post {
-        success {
-            // This block will be executed only if the build is successful
-            echo 'Build successful!'
         }
     }
 }
