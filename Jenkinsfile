@@ -9,12 +9,21 @@ pipeline {
     }
 
     stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
         stage('Build') {
             steps {
                 script {
                     // Your build steps go here
                     // For example:
                     sh 'mvn clean install'
+
+                    // Stash the artifacts
+                    stash includes: 'MyPhoenixApp/target/*.war', name: 'myArtifacts'
                 }
             }
         }
@@ -22,10 +31,26 @@ pipeline {
         stage('Copy Artifact') {
             steps {
                 script {
-                    // Copy all artifacts to the target repository
-                    sh "curl -u ${ARTIFACTORY_CREDENTIALS_ID} -X POST '${ARTIFACTORY_URL}/api/copy/${ARTIFACTORY_REPO}/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/*?to=/${TARGET_REPO}/com/dept/app/MyPhoenixApp/1.0-SNAPSHOT/'"
+                    // Unstash and copy the artifacts to the target repository
+                    unstash 'myArtifacts'
+                    sh "cp MyPhoenixApp/target/*.war /var/lib/jenkins/jobs/${TARGET_REPO}/workspace/"
                 }
             }
+        }
+
+        // Add more stages as needed
+    }
+
+    post {
+        success {
+            echo 'Pipeline succeeded!'
+
+            // Add post-success actions if needed
+        }
+        failure {
+            echo 'Pipeline failed!'
+
+            // Add post-failure actions if needed
         }
     }
 }
