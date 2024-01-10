@@ -29,7 +29,7 @@ pipeline {
         stage('Copy Artifact') {
             steps {
                 script {
-                    def server = Artifactory.server ARTIFACTORY_CREDENTIALS_ID
+                    def server = Artifactory.server ARTIFACTORY_URL
                     def buildInfo = Artifactory.newBuildInfo()
 
                     server.download(
