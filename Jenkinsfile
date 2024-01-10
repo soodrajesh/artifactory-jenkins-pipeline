@@ -31,6 +31,8 @@ pipeline {
                 script {
                     // Artifactory credentials
                     def credentials = credentials('artifactory-cred')
+                    def username = credentials.username
+                    def password = credentials.password
 
                     // Source and target URLs
                     def sourceUrl = "${ARTIFACTORY_URL}/${ARTIFACTORY_REPO}/${env.JOB_NAME}/${BUILD_NUMBER}/archive/*.war"
@@ -38,7 +40,7 @@ pipeline {
 
                     // cURL command to copy artifacts
                     def curlCommand = """
-                        curl -u ${credentials.username}:${credentials.password} \
+                        curl -vvv -u ${username}:${password} \
                         -X COPY "${sourceUrl}" \
                         "${targetUrl}" \
                         --header "Destination: ${targetUrl}"
@@ -49,7 +51,7 @@ pipeline {
                 }
             }
         }
-    }
+    
 
     post {
         success {
