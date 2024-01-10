@@ -5,7 +5,7 @@ pipeline {
         ARTIFACTORY_REPO = 'demo'
         TARGET_REPO = 'demo2'
         ARTIFACTORY_CREDENTIALS_ID = 'artifactory-cred'
-        ARTIFACTORY_URL = 'http://ec2-35-94-82-123.us-west-2.compute.amazonaws.com:8081/artifactory'
+        ARTIFACTORY_URL = 'http://ec2-35-81-82-98.us-west-2.compute.amazonaws.com:8081/artifactory'
     }
 
     stages {
@@ -18,9 +18,15 @@ pipeline {
         stage('Build') {
             steps {
                 script {
-                    // Your build steps go here
-                    // For example:
-                    sh 'mvn clean install'
+                    // Change to the MyPhoenixApp directory before running Maven
+                    dir('MyPhoenixApp') {
+                        // Check if the pom.xml file exists
+                        if (fileExists('pom.xml')) {
+                            sh 'mvn clean install'
+                        } else {
+                            error 'pom.xml not found in the specified directory.'
+                        }
+                    }
 
                     // Stash the artifacts
                     stash includes: 'MyPhoenixApp/target/*.war', name: 'myArtifacts'
@@ -41,19 +47,16 @@ pipeline {
             }
         }
 
-
         // Add more stages as needed
     }
 
     post {
         success {
             echo 'Pipeline succeeded!'
-
             // Add post-success actions if needed
         }
         failure {
             echo 'Pipeline failed!'
-
             // Add post-failure actions if needed
         }
     }
