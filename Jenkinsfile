@@ -17,12 +17,15 @@ pipeline {
 
         stage('Build') {
             steps {
-                script {
-                    // Your build steps
-                    sh 'mvn clean install' // Replace with your actual build command
+                dir('MyPhoenixApp') {
+                    script {
+                        // Your build steps
+                        sh 'mvn clean install' // Replace with your actual build command
+                    }
                 }
             }
         }
+
 
         // Add more stages as needed
 
