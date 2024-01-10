@@ -5,8 +5,6 @@ pipeline {
         ARTIFACTORY_REPO = 'demo'
         TARGET_REPO = 'demo2'
         ARTIFACTORY_URL = 'http://ec2-35-94-82-123.us-west-2.compute.amazonaws.com:8081/artifactory'
-
-        // Derive credentials ID based on Artifactory URL
         ARTIFACTORY_CREDENTIALS_ID = "${ARTIFACTORY_URL.hashCode()}"
     }
 
@@ -31,11 +29,18 @@ pipeline {
         stage('Copy Artifact') {
             steps {
                 script {
-                    // Copy artifacts from the source project to the target project
-                    copyArtifacts(
-                        filter: '*.war',
-                        projectName: env.JOB_NAME, // Use Jenkins job name as the project name
-                        selector: lastSuccessful()
+                    def server = Artifactory.server ARTIFACTORY_URL
+                    def buildInfo = Artifactory.newBuildInfo()
+
+                    server.download(
+                        "${env.JOB_NAME}/${BUILD_NUMBER}/archive/*.war",
+                        buildInfo
+                    )
+
+                    server.upload(
+                        buildInfo,
+                        "${TARGET_REPO}/${env.JOB_NAME}/",
+                        "*.war"
                     )
                 }
             }
