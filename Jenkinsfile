@@ -4,8 +4,10 @@ pipeline {
     environment {
         ARTIFACTORY_REPO = 'demo'
         TARGET_REPO = 'demo2'
-        ARTIFACTORY_CREDENTIALS_ID = 'artifactory-cred'
         ARTIFACTORY_URL = 'http://ec2-35-94-82-123.us-west-2.compute.amazonaws.com:8081/artifactory'
+        
+        // Derive credentials ID based on Artifactory URL
+        ARTIFACTORY_CREDENTIALS_ID = "${ARTIFACTORY_URL.hashCode()}"
     }
 
     stages {
@@ -26,27 +28,18 @@ pipeline {
             }
         }
 
-        stage('Copy to Target Repo') {
+        stage('Copy Artifact') {
             steps {
                 script {
-                    // Copy artifact to the target repository
-                    rtUpload (
-                        serverId: "${ARTIFACTORY_CREDENTIALS_ID}",
-                        spec: """{
-                            "files": [
-                                {
-                                    "pattern": "MyPhoenixApp/target/*.war",
-                                    "target": "${ARTIFACTORY_REPO}/${TARGET_REPO}/"
-                                }
-                            ]
-                        }"""
+                    // Copy artifacts from the source project to the target project
+                    copyArtifacts(
+                        filter: '*.war',
+                        projectName: 'MyPhoenixApp', // Replace with the correct source project name
+                        selector: lastSuccessful()
                     )
                 }
             }
         }
-
-        // Add more stages as needed
-
     }
 
     post {
