@@ -5,7 +5,7 @@ pipeline {
         ARTIFACTORY_REPO = 'demo'
         TARGET_REPO = 'demo2'
         ARTIFACTORY_CREDENTIALS_ID = 'artifactory-cred'
-        ARTIFACTORY_URL = 'http://ec2-35-81-82-98.us-west-2.compute.amazonaws.com:8081/artifactory'
+        ARTIFACTORY_URL = 'http://ec2-35-94-82-123.us-west-2.compute.amazonaws.com:8081/artifactory'
     }
 
     stages {
