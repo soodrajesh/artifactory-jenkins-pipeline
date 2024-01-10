@@ -55,7 +55,7 @@ pipeline {
                 }
             }
         }
-
+    } // Close stages block
 
     post {
         success {
@@ -67,5 +67,4 @@ pipeline {
             // Add post-failure actions if needed
         }
     }
-}
 }
