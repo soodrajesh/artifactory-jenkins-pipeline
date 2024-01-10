@@ -51,7 +51,7 @@ pipeline {
                 }
             }
         }
-    
+    }
 
     post {
         success {
@@ -63,5 +63,4 @@ pipeline {
             // Add post-failure actions if needed
         }
     }
-}
 }
