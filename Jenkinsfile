@@ -4,23 +4,27 @@ pipeline {
     environment {
         ARTIFACTORY_REPO = 'demo'
         TARGET_REPO = 'demo2'
-        ARTIFACTORY_URL = 'http://ec2-35-94-82-123.us-west-2.compute.amazonaws.com:8081/artifactory'
         ARTIFACTORY_CREDENTIALS_ID = 'artifactory-cred'
+        ARTIFACTORY_URL = 'http://ec2-35-81-82-98.us-west-2.compute.amazonaws.com:8081/artifactory'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                script {
+                    checkout scm
+                }
             }
         }
 
         stage('Build') {
             steps {
-                dir('MyPhoenixApp') {
-                    script {
-                        // Your build steps
-                        sh 'mvn clean install' // Replace with your actual build command
+                script {
+                    withCredentials([usernamePassword(credentialsId: ARTIFACTORY_CREDENTIALS_ID, usernameVariable: 'ARTIFACTORY_USER', passwordVariable: 'ARTIFACTORY_PASSWORD')]) {
+                        def mavenHome = tool 'Maven3'
+                        def mavenCMD = "${mavenHome}/bin/mvn"
+
+                        sh "${mavenCMD} -f MyPhoenixApp/pom.xml clean install -e"
                     }
                 }
             }
@@ -29,42 +33,14 @@ pipeline {
         stage('Copy Artifact') {
             steps {
                 script {
-                    // Artifactory credentials
-                    def credentials = findCredentials(credentialsId: 'artifactory-cred')
-                    def username = credentials?.username
-                    def password = credentials?.password
-
-                    if (username && password) {
-                        // Source and target URLs
-                        def sourceUrl = "${ARTIFACTORY_URL}/${ARTIFACTORY_REPO}/${env.JOB_NAME}/${BUILD_NUMBER}/archive/*.war"
-                        def targetUrl = "${ARTIFACTORY_URL}/${TARGET_REPO}/${env.JOB_NAME}/"
-
-                        // cURL command to copy artifacts
-                        def curlCommand = """
-                            curl -vvv -u ${username}:${password} \
-                            -X COPY "${sourceUrl}" \
-                            "${targetUrl}" \
-                            --header "Destination: ${targetUrl}"
-                        """
-
-                        // Execute the cURL command
-                        sh curlCommand.trim()
-                    } else {
-                        error 'Credentials not found!'
-                    }
+                    // Copy artifacts from the source project to the target project
+                    copyArtifacts(
+                        filter: '*.war',
+                        projectName: 'artifactory-jenkins-project2', // Replace with your source project name
+                        selector: lastSuccessful()
+                    )
                 }
             }
-        }
-    } // Close stages block
-
-    post {
-        success {
-            echo 'Pipeline succeeded!'
-            // Add post-success actions if needed
-        }
-        failure {
-            echo 'Pipeline failed!'
-            // Add post-failure actions if needed
         }
     }
 }
