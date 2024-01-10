@@ -26,6 +26,24 @@ pipeline {
             }
         }
 
+        stage('Copy to Target Repo') {
+            steps {
+                script {
+                    // Copy artifact to the target repository
+                    rtUpload (
+                        serverId: "${ARTIFACTORY_CREDENTIALS_ID}",
+                        spec: """{
+                            "files": [
+                                {
+                                    "pattern": "MyPhoenixApp/target/*.war",
+                                    "target": "${ARTIFACTORY_REPO}/${TARGET_REPO}/"
+                                }
+                            ]
+                        }"""
+                    )
+                }
+            }
+        }
 
         // Add more stages as needed
 
