@@ -25,7 +25,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Copy Artifact') {
             steps {
                 script {
@@ -67,4 +67,5 @@ pipeline {
             // Add post-failure actions if needed
         }
     }
+}
 }
