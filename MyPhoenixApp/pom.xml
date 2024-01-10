@@ -7,6 +7,7 @@
   <version>1.0-SNAPSHOT</version>
   <name>MyPhoenixApp Maven Webapp</name>
   <url>http://maven.apache.org</url>
+  
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
@@ -15,7 +16,16 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+  
   <build>
     <finalName>MyPhoenixApp</finalName>
+    
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-war-plugin</artifactId>
+        <version>3.2.2</version> <!-- Use the latest version or a version that is compatible with your Maven version -->
+      </plugin>
+    </plugins>
   </build>
 </project>
